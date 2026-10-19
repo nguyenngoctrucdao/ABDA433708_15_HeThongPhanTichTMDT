@@ -93,6 +93,7 @@ Vì vậy không so sánh trực tiếp các cột danh mục giữa hai sàn; c
 | Cột | Kiểu | Ý nghĩa | Lưu ý |
 |---|---|---|---|
 | `username` | chuỗi | Tên đăng nhập | Không trùng |
+| `name` | chuỗi | Tên hiển thị của tài khoản | Ví dụ: "Quan tri vien", "Nguoi xem" |
 | `password_hash` | chuỗi | Mật khẩu đã mã hóa | Tuyệt đối không lưu mật khẩu thô |
 | `role` | chuỗi | Quyền | `admin` hoặc `viewer` |
 | `created_at` | chuỗi thời gian | Ngày tạo | |
@@ -108,7 +109,7 @@ Vì vậy không so sánh trực tiếp các cột danh mục giữa hai sàn; c
 
 ## 8. Index (TV2 tạo)
 
-*Trạng thái: chưa tạo (hiện chỉ có index mặc định `_id_`).*
+   *Trạng thái: đã tạo (4 index, gồm `_id_` mặc định).*
 
 - (`source`, `product_id`) duy nhất
 - `category_name`
@@ -118,3 +119,9 @@ Vì vậy không so sánh trực tiếp các cột danh mục giữa hai sàn; c
 
 - Một sản phẩm thuộc đúng một sàn (`source`) và một danh mục (`category_name`).
 - Một thương hiệu (`brand`) có nhiều sản phẩm.
+
+## 10. Sao lưu và phục hồi
+
+   - `backup.py`: xuất mọi collection ra file JSON trong thư mục `backup/<ngày_giờ>/` (không xuất trường `_id`).
+   - `restore.py`: xóa dữ liệu hiện tại của từng collection rồi nạp lại từ bản sao lưu (mặc định lấy bản mới nhất; cần gõ `yes` để xác nhận).
+   - Thư mục `backup/` nằm trong `.gitignore`, bản cần chia sẻ để trên Drive.
