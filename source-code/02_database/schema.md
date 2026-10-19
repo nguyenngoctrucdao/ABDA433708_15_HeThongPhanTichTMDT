@@ -19,7 +19,7 @@
 | `products_clean` | Dữ liệu sau làm sạch | TV3 | Xem mục 5 |
 | `users` | Tài khoản đăng nhập web | TV2 tạo, TV5 dùng | Xem mục 6 |
 
-Hai sàn dùng chung một collection vì phần lớn cột giống nhau; MongoDB không bắt mọi document phải có cùng trường nên cột riêng của từng sàn vẫn lưu được (sàn không có thì để `null`).
+Hai sàn dùng chung một collection vì phần lớn cột giống nhau; MongoDB không bắt mọi document phải có cùng trường nên cột riêng của từng sàn vẫn lưu được (sàn không có cột nào thì document của sàn đó không có trường ấy; ô có cột nhưng trống thì lưu null).
 
 ## 2. Cột chung của hai sàn (`products_raw`)
 
@@ -31,11 +31,11 @@ Hai sàn dùng chung một collection vì phần lớn cột giống nhau; Mongo
 | `name` | chuỗi | Tên sản phẩm | Bắt buộc |
 | `brand` | chuỗi | Thương hiệu | Có thể trống (Tiki thiếu 496 dòng); cần chuẩn hóa hoa/thường |
 | `price` | số nguyên | Giá bán hiện tại (VND) | >= 0; giá 0 là bất thường |
-| `original_price` | số | Giá gốc / giá thị trường (VND) | >= `price` thông thường. Hasaki thiếu 154 dòng nên khi đọc CSV thành số thực |
+| `original_price` | số | Giá gốc / giá thị trường (VND) | >= `price` thông thường. Tiki: số nguyên, đủ dữ liệu. Hasaki: số thực, thiếu 154 dòng (`null`) |
 | `discount_rate` | số nguyên | % giảm giá | 0 đến 100 |
 | `rating_average` | số thực | Điểm đánh giá trung bình | 0 đến 5. Tiki: 0 thường nghĩa là chưa có đánh giá |
 | `review_count` | số nguyên | Số lượt đánh giá | >= 0 |
-| `quantity_sold` | số | Số lượng đã bán | Tiki thiếu 510 dòng (sản phẩm mới), nên khi đọc CSV thành số thực |
+| `quantity_sold` | số | Số lượng đã bán | Tiki: số thực, thiếu 510 dòng (`null`, thường là sản phẩm mới). Hasaki: số nguyên, đủ dữ liệu |
 | `has_gift` | đúng/sai | Có quà tặng kèm | |
 | `category_id` | số nguyên | Mã danh mục | Khác nghĩa giữa hai sàn, xem mục 4 |
 | `category_name` | chuỗi | Tên danh mục dùng khi crawl | Tiki: `urlKey`; Hasaki: `cate_path` |
@@ -103,6 +103,8 @@ Vì vậy không so sánh trực tiếp các cột danh mục giữa hai sàn; c
 - `price` >= 0; `rating_average` trong [0, 5]; `discount_rate` trong [0, 100].
 - `discount_rate` ≈ (`original_price` - `price`) / `original_price` x 100.
 - Dữ liệu thô (`products_raw`) không được sửa; mọi chỉnh sửa thực hiện ở `products_clean`.
+- **Kết quả kiểm tra trên `products_raw` (6.945 document, nạp ngày 19/10/2026):** 0 bản ghi trùng (`source`, `product_id`); 0 vi phạm `price` >= 0, `rating_average` trong [0, 5], `discount_rate` trong [0, 100], `review_count` >= 0; không có sản phẩm giá 0; `original_price` >= `price` ở mọi dòng có `original_price` (Hasaki có 154 dòng không có giá gốc nên không so sánh được). Tên cột trên MongoDB khớp hoàn toàn với mục 2 và 3. Chưa kiểm tra công thức `discount_rate` và `discount`.
+
 
 ## 8. Index (TV2 tạo)
 
