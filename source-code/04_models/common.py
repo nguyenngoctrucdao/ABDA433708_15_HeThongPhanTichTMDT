@@ -24,14 +24,14 @@ except ImportError:          # chưa cài python-dotenv thì bỏ qua, dùng bi�
 # ----------------------------------------------------------------------------
 # 1. Đường dẫn và cấu hình
 # ----------------------------------------------------------------------------
-# File này nằm ở  <gốc repo>/source-code/04_ml_models/common.py
+# File này nằm ở  <gốc repo>/source-code/04_models/common.py
 # parents[0] = 04_ml_models, parents[1] = source-code, parents[2] = gốc repo
 ROOT = Path(__file__).resolve().parents[2]
 if load_dotenv:
     load_dotenv(ROOT / ".env")
 
 MONGO_URI = os.getenv("MONGO_URI")                                   # lấy từ .env
-DB_NAME = os.getenv("DB_NAME") or os.getenv("MONGO_DB") or "ecommerce_db"
+DB_NAME = os.getenv("DB_NAME", "ecommerce_db")
 SRC_COLL = "products_cleaned"                                        # collection nguồn (chỉ đọc)
 CSV_FILE = ROOT / "dataset" / "cleaned" / "products_cleaned.csv"     # bản CSV dự phòng
 FORCE_CSV = os.getenv("ML_FORCE_CSV") == "1"                         # run_all.py --csv sẽ bật
