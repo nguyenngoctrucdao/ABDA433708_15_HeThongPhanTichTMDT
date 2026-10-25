@@ -220,3 +220,5 @@ __marimo__/
 .streamlit/secrets.toml
 dataset/raw/
 backup/
+.env
+__pycache__/
