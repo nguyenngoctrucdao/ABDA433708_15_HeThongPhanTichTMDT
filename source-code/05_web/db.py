@@ -13,7 +13,7 @@ load_dotenv(ROOT / ".env")
 @st.cache_resource
 def get_database():
     uri = os.getenv("MONGO_URI")
-    db_name = os.getenv("DB_NAME", "ecommerce_db")
+    db_name = os.getenv("MONGO_DB", "ecommerce_db")
 
     if not uri:
         raise RuntimeError("Chưa khai báo MONGO_URI trong file .env")

@@ -7,161 +7,181 @@ from permissions import require_login
 
 require_login()
 
-st.title("📊 Dashboard thương mại điện tử")
+NAVY = "#172F57"
+BLUE = "#2563EB"
+CYAN = "#20A4D8"
+PALETTE = {"tiki": BLUE, "hasaki": CYAN}
 
-df = load_products()
+st.html("""
+<style>
+/* Scoped to this page's rendered content; does not modify app.py */
+[data-testid="stMainBlockContainer"] {max-width: 1540px; padding-top: 2.0rem; padding-bottom: 3rem;}
+[data-testid="stAppViewContainer"] {background-color: #f4f7fc;}
+.dash-eyebrow {font-size: .77rem; font-weight: 750; letter-spacing: .12em; color: #6a82a5; margin-bottom: .35rem;}
+.dash-title {font-size: clamp(1.7rem, 2.5vw, 2.5rem); font-weight: 800; color: #172F57; line-height: 1.22; margin: 0;}
+.dash-subtitle {color: #65748b; font-size: .95rem; margin-top: .6rem; margin-bottom: 1.2rem;}
+.dash-section {font-size: 1.22rem; font-weight: 760; color: #172F57; margin: 1.4rem 0 .25rem;}
+.dash-caption {color: #71809a; font-size: .83rem; margin: 0 0 .8rem;}
+.dash-filter-title {font-size: 1rem; font-weight: 760; color: #172F57; margin: .35rem 0 .2rem;}
+[data-testid="stMetric"] {background: #fff; border: 1px solid #e3eaf5; border-radius: 16px; padding: 18px 20px; box-shadow: 0 5px 18px rgba(22,47,87,.045); min-height: 118px;}
+[data-testid="stMetricLabel"] {color: #66758e; font-weight: 600;}
+[data-testid="stMetricValue"] {color: #172F57; font-weight: 780; font-size: clamp(1.35rem, 2vw, 2rem);}
+[data-testid="stPlotlyChart"] {background: #fff; border: 1px solid #e3eaf5; border-radius: 16px; padding: 12px; box-shadow: 0 5px 18px rgba(22,47,87,.045);}
+[data-testid="stDataFrame"] {border-radius: 12px; overflow: hidden;}
+[data-baseweb="select"] > div {border-radius: 10px; border-color: #dbe4f1;}
+</style>
+""")
 
-if df.empty:
+st.html("""
+<div class="dash-eyebrow">E-COMMERCE ANALYTICS / DASHBOARD</div>
+<div class="dash-title">Tổng quan dữ liệu thương mại điện tử</div>
+<div class="dash-subtitle">Theo dõi danh mục, giá bán, đánh giá và mức độ tiêu thụ của sản phẩm trên Tiki &amp; Hasaki.</div>
+""")
+
+raw_df = load_products()
+if raw_df.empty:
     st.warning("Chưa có dữ liệu trong products_cleaned.")
     st.stop()
 
-numeric_cols = [
-    "Giá bán", "Giá gốc", "Số tiền giảm giá",
-    "Tỷ lệ giảm giá", "Điểm đánh giá trung bình",
-    "Số lượt đánh giá", "Số lượng đã bán"
-]
+df = raw_df.copy()
+required_cols = ["Nguồn dữ liệu", "Tên danh mục", "Tên sản phẩm", "Giá bán", "Điểm đánh giá trung bình", "Số lượt đánh giá", "Số lượng đã bán"]
+missing = [col for col in required_cols if col not in df.columns]
+if missing:
+    st.error("Dữ liệu đang thiếu các cột cần thiết: " + ", ".join(missing))
+    st.stop()
 
+numeric_cols = [
+    "Giá bán", "Giá gốc", "Số tiền giảm giá", "Tỷ lệ giảm giá",
+    "Điểm đánh giá trung bình", "Số lượt đánh giá", "Số lượng đã bán"
+]
 for col in numeric_cols:
     if col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-source = st.selectbox(
-    "Nguồn dữ liệu",
-    ["Tất cả"] + sorted(
-        df["Nguồn dữ liệu"].dropna().unique().tolist()
-    )
-)
-
+st.html('<div class="dash-filter-title">Bộ lọc dữ liệu</div>')
+filter_a, filter_b = st.columns([1, 2], gap="medium")
+with filter_a:
+    sources = sorted(df["Nguồn dữ liệu"].dropna().astype(str).unique().tolist())
+    source = st.selectbox("Nguồn dữ liệu", ["Tất cả"] + sources)
 if source != "Tất cả":
     df = df[df["Nguồn dữ liệu"] == source]
 
-categories = sorted(
-    df["Tên danh mục"].dropna().unique().tolist()
-)
-
-selected_categories = st.multiselect(
-    "Lọc danh mục",
-    categories
-)
-
+with filter_b:
+    categories = sorted(df["Tên danh mục"].dropna().astype(str).unique().tolist())
+    selected_categories = st.multiselect(
+        "Danh mục sản phẩm", categories,
+        placeholder="Chọn danh mục",  # Thay cho Choose options
+    )
 if selected_categories:
     df = df[df["Tên danh mục"].isin(selected_categories)]
 
-c1, c2, c3, c4 = st.columns(4)
-
-c1.metric("Tổng sản phẩm", f"{len(df):,}")
-c2.metric("Số danh mục", df["Tên danh mục"].nunique())
-
-avg_price = df["Giá bán"].mean()
-c3.metric(
-    "Giá bán trung bình",
-    f"{avg_price:,.0f} VNĐ" if pd.notna(avg_price) else "N/A"
-)
+st.caption(f"Đang hiển thị **{len(df):,}** sản phẩm theo bộ lọc đã chọn.")
 
 rated = df.loc[
-    df["Số lượt đánh giá"] > 0,
+    (df["Số lượt đánh giá"] > 0) & df["Điểm đánh giá trung bình"].notna(),
     "Điểm đánh giá trung bình"
 ]
+avg_price = df["Giá bán"].mean()
 avg_rating = rated.mean()
 
-c4.metric(
-    "Điểm đánh giá TB",
-    f"{avg_rating:.2f}/5" if pd.notna(avg_rating) else "N/A"
-)
+k1, k2, k3, k4 = st.columns(4, gap="medium")
+with k1:
+    st.metric("Tổng sản phẩm", f"{len(df):,}")
+with k2:
+    st.metric("Số danh mục", f"{df['Tên danh mục'].nunique():,}")
+with k3:
+    st.metric("Giá bán trung bình", f"{avg_price:,.0f} ₫" if pd.notna(avg_price) else "N/A")
+with k4:
+    st.metric("Điểm đánh giá TB", f"{avg_rating:.2f}/5" if pd.notna(avg_rating) else "N/A")
 
-st.subheader("Phân bố sản phẩm theo nguồn")
-source_counts = (
-    df["Nguồn dữ liệu"]
-    .value_counts()
-    .reset_index()
-)
-source_counts.columns = ["Nguồn", "Số sản phẩm"]
 
-st.plotly_chart(
-    px.bar(
-        source_counts,
-        x="Nguồn",
-        y="Số sản phẩm",
-        text="Số sản phẩm"
-    ),
-    use_container_width=True
-)
-
-st.subheader("Top 10 danh mục nhiều sản phẩm")
-
-top_categories = (
-    df["Tên danh mục"]
-    .value_counts()
-    .head(10)
-    .reset_index()
-)
-top_categories.columns = ["Danh mục", "Số sản phẩm"]
-
-st.plotly_chart(
-    px.bar(
-        top_categories,
-        x="Số sản phẩm",
-        y="Danh mục",
-        orientation="h"
-    ),
-    use_container_width=True
-)
-
-st.subheader("Phân bố giá bán")
-
-price_df = df.dropna(subset=["Giá bán"])
-
-if not price_df.empty:
-    st.plotly_chart(
-        px.box(
-            price_df,
-            x="Nguồn dữ liệu",
-            y="Giá bán",
-            points=False
-        ),
-        use_container_width=True
+def style_chart(fig, height=350, horizontal=False):
+    fig.update_layout(
+        template="plotly_white", height=height,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial", color="#43526a", size=12),
+        margin=dict(l=12, r=12, t=25, b=22),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        hoverlabel=dict(bgcolor="#ffffff"),
     )
+    if horizontal:
+        fig.update_xaxes(gridcolor="#edf1f7", zeroline=False)
+        fig.update_yaxes(showgrid=False)
+    else:
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(gridcolor="#edf1f7", zeroline=False)
+    return fig
 
-st.subheader("Phân bố điểm đánh giá")
 
-rating_df = df[
-    (df["Số lượt đánh giá"] > 0)
-    & df["Điểm đánh giá trung bình"].notna()
-]
+def section(title, caption=None):
+    st.html(f'<div class="dash-section">{title}</div>')
+    if caption:
+        st.caption(caption)
 
-if not rating_df.empty:
-    st.plotly_chart(
-        px.histogram(
-            rating_df,
-            x="Điểm đánh giá trung bình",
-            nbins=20,
-            color="Nguồn dữ liệu"
-        ),
-        use_container_width=True
-    )
 
-st.subheader("Top 10 sản phẩm bán chạy")
+section("01  |  Cơ cấu sản phẩm", "Số lượng sản phẩm theo nguồn và theo danh mục trong dữ liệu đã thu thập.")
+left_chart, right_chart = st.columns(2, gap="medium")
+with left_chart:
+    st.markdown("**Phân bố sản phẩm theo nguồn**")
+    source_counts = df["Nguồn dữ liệu"].value_counts().rename_axis("Nguồn").reset_index(name="Số sản phẩm")
+    if not source_counts.empty:
+        fig = px.bar(source_counts, x="Nguồn", y="Số sản phẩm", text="Số sản phẩm", color="Nguồn", color_discrete_map=PALETTE)
+        fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
+        fig.update_layout(showlegend=False)
+        st.plotly_chart(style_chart(fig), use_container_width=True)
+    else:
+        st.info("Không có dữ liệu nguồn để hiển thị.")
 
+with right_chart:
+    st.markdown("**Top 10 danh mục nhiều sản phẩm**")
+    top_categories = df["Tên danh mục"].value_counts().head(10).rename_axis("Danh mục").reset_index(name="Số sản phẩm")
+    if not top_categories.empty:
+        top_categories = top_categories.sort_values("Số sản phẩm")
+        fig = px.bar(top_categories, x="Số sản phẩm", y="Danh mục", orientation="h", text="Số sản phẩm")
+        fig.update_traces(marker_color=BLUE, textposition="outside", cliponaxis=False)
+        fig.update_layout(yaxis_title=None, xaxis_title=None)
+        st.plotly_chart(style_chart(fig, height=350, horizontal=True), use_container_width=True)
+    else:
+        st.info("Không có dữ liệu danh mục để hiển thị.")
+
+section("02  |  Giá bán và đánh giá", "Phân bố giá bán và điểm đánh giá của sản phẩm có lượt đánh giá thực tế.")
+price_col, rating_col = st.columns(2, gap="medium")
+with price_col:
+    st.markdown("**Phân bố giá bán theo nguồn**")
+    price_df = df.dropna(subset=["Giá bán"])
+    if not price_df.empty:
+        fig = px.box(price_df, x="Nguồn dữ liệu", y="Giá bán", color="Nguồn dữ liệu", points=False, color_discrete_map=PALETTE)
+        fig.update_layout(showlegend=False, xaxis_title=None, yaxis_title="Giá bán (VNĐ)")
+        st.plotly_chart(style_chart(fig), use_container_width=True)
+    else:
+        st.info("Không có dữ liệu giá bán hợp lệ.")
+with rating_col:
+    st.markdown("**Phân bố điểm đánh giá**")
+    rating_df = df[(df["Số lượt đánh giá"] > 0) & df["Điểm đánh giá trung bình"].notna()]
+    if not rating_df.empty:
+        fig = px.histogram(rating_df, x="Điểm đánh giá trung bình", nbins=20, color="Nguồn dữ liệu", barmode="group", color_discrete_map=PALETTE)
+        fig.update_layout(xaxis_title="Điểm đánh giá", yaxis_title="Số sản phẩm")
+        st.plotly_chart(style_chart(fig), use_container_width=True)
+    else:
+        st.info("Không có sản phẩm có lượt đánh giá để hiển thị.")
+
+section("03  |  Sản phẩm bán chạy", "Chỉ xếp hạng những sản phẩm có số lượng đã bán được ghi nhận; dữ liệu trống không được thay bằng 0.")
 sold_df = df.dropna(subset=["Số lượng đã bán"])
-
 if not sold_df.empty:
-    top_sold = sold_df.nlargest(
-        10, "Số lượng đã bán"
-    )
-
+    top_sold = sold_df.nlargest(10, "Số lượng đã bán")
     st.dataframe(
-        top_sold[
-            [
-                "Tên sản phẩm",
-                "Nguồn dữ liệu",
-                "Giá bán",
-                "Số lượng đã bán"
-            ]
-        ],
-        hide_index=True,
-        use_container_width=True
+        top_sold[["Tên sản phẩm", "Nguồn dữ liệu", "Giá bán", "Số lượng đã bán"]],
+        hide_index=True, use_container_width=True,
+        column_config={
+            "Tên sản phẩm": st.column_config.TextColumn("Tên sản phẩm", width="large"),
+            "Nguồn dữ liệu": st.column_config.TextColumn("Nguồn"),
+            "Giá bán": st.column_config.NumberColumn("Giá bán (VNĐ)", format="%,.0f"),
+            "Số lượng đã bán": st.column_config.NumberColumn("Đã bán", format="%,.0f"),
+        }
     )
+else:
+    st.info("Không có số lượng đã bán hợp lệ.")
 
-st.subheader("Dữ liệu chi tiết")
-st.dataframe(df, hide_index=True, use_container_width=True)
-
+with st.expander("Xem dữ liệu chi tiết", expanded=False):
+    st.caption("Dữ liệu được lấy từ collection products_cleaned, áp dụng các bộ lọc phía trên.")
+    st.dataframe(df, hide_index=True, use_container_width=True)
