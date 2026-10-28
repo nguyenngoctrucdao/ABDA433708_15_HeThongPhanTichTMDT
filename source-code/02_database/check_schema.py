@@ -7,7 +7,7 @@ from pymongo import MongoClient
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 col = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)[
-    os.getenv("DB_NAME", "ecommerce_db")]["products_raw"]
+    os.getenv("MONGO_DB", "ecommerce_db")]["products_raw"]
 
 COMMON = ["source", "product_id", "sku", "name", "brand", "price", "original_price",
           "discount_rate", "rating_average", "review_count", "quantity_sold", "has_gift",

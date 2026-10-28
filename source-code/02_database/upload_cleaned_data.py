@@ -12,7 +12,7 @@ client = MongoClient(
     serverSelectionTimeoutMS=10000
 )
 
-db = client[os.getenv("DB_NAME", "ecommerce_db")]
+db = client[os.getenv("MONGO_DB", "ecommerce_db")]
 col = db["products_cleaned"]
 
 # File CSV đã làm sạch

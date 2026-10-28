@@ -5,7 +5,7 @@ from pymongo import MongoClient
 
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
-db = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)[os.getenv("DB_NAME", "ecommerce_db")]
+db = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)[os.getenv("MONGO_DB", "ecommerce_db")]
 
 # Dùng: python restore.py [tên_thư_mục_backup]; không truyền thì lấy bản mới nhất
 backups = sorted(p for p in (ROOT / "backup").iterdir() if p.is_dir())

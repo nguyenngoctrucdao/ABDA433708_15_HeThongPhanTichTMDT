@@ -7,14 +7,14 @@ from pymongo import MongoClient
 
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
-db = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)[os.getenv("DB_NAME", "ecommerce_db")]
+db = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)[os.getenv("MONGO_DB", "ecommerce_db")]
 users = db["users"]
 users.create_index("username", unique=True)
 
 # (username, họ tên, quyền)
 ACCOUNTS = [
-    ("admin", "Quan tri vien", "admin"),
-    ("viewer", "Nguoi xem", "viewer"),
+    ("admin", "Quản trị viên", "admin"),
+    ("viewer", "Người xem", "viewer"),
 ]
 
 for username, name, role in ACCOUNTS:

@@ -5,7 +5,7 @@ from pymongo import MongoClient
 
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
-db = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)[os.getenv("DB_NAME", "ecommerce_db")]
+db = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)[os.getenv("MONGO_DB", "ecommerce_db")]
 col = db["products_raw"]
 
 # Kiểm tra trùng (source, product_id) trước khi tạo index unique

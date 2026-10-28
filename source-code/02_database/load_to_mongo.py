@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 
 client = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)
-db = client[os.getenv("DB_NAME", "ecommerce_db")]
+db = client[os.getenv("MONGO_DB", "ecommerce_db")]
 col = db["products_raw"]
 
 FILES = [("tiki_products.csv", "tiki"), ("hasaki_products.csv", "hasaki")]

@@ -6,7 +6,7 @@ from pymongo import MongoClient
 
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
-db = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)[os.getenv("DB_NAME", "ecommerce_db")]
+db = MongoClient(os.getenv("MONGO_URI"), serverSelectionTimeoutMS=10000)[os.getenv("MONGO_DB", "ecommerce_db")]
 
 out = ROOT / "backup" / datetime.now().strftime("%Y%m%d_%H%M")
 out.mkdir(parents=True, exist_ok=True)
