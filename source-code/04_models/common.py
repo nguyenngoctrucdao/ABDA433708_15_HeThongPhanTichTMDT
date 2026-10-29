@@ -24,14 +24,12 @@ except ImportError:          # chưa cài python-dotenv thì bỏ qua, dùng bi�
 # ----------------------------------------------------------------------------
 # 1. Đường dẫn và cấu hình
 # ----------------------------------------------------------------------------
-# File này nằm ở  <gốc repo>/source-code/04_models/common.py
-# parents[0] = 04_ml_models, parents[1] = source-code, parents[2] = gốc repo
 ROOT = Path(__file__).resolve().parents[2]
 if load_dotenv:
     load_dotenv(ROOT / ".env")
 
 MONGO_URI = os.getenv("MONGO_URI")                                   # lấy từ .env
-DB_NAME = os.getenv("DB_NAME", "ecommerce_db")
+DB_NAME = os.getenv("DB_NAME") or os.getenv("MONGO_DB") or "ecommerce_db"
 SRC_COLL = "products_cleaned"                                        # collection nguồn (chỉ đọc)
 CSV_FILE = ROOT / "dataset" / "cleaned" / "products_cleaned.csv"     # bản CSV dự phòng
 FORCE_CSV = os.getenv("ML_FORCE_CSV") == "1"                         # run_all.py --csv sẽ bật
@@ -62,6 +60,15 @@ ALIASES = {
 NUMERIC_COLS = ["gia_ban", "gia_goc", "so_tien_giam_gia", "ty_le_giam_gia",
                 "diem_danh_gia_trung_binh", "so_luot_danh_gia", "so_luong_da_ban"]
 REQUIRED = ["nguon", "ma_san_pham", "ten_danh_muc"] + NUMERIC_COLS
+
+# Tên CÓ DẤU của các cột dùng làm đặc trưng (giống tên cột trong collection products_cleaned)
+TEN_CO_DAU = {
+    "gia_ban": "Giá bán", "gia_goc": "Giá gốc", "so_tien_giam_gia": "Số tiền giảm giá",
+    "ty_le_giam_gia": "Tỷ lệ giảm giá", "diem_danh_gia_trung_binh": "Điểm đánh giá trung bình",
+    "so_luot_danh_gia": "Số lượt đánh giá", "so_luong_da_ban": "Số lượng đã bán",
+    "nguon": "Nguồn dữ liệu", "ten_danh_muc": "Tên danh mục",
+}
+TEN_KHONG_DAU = {v: k for k, v in TEN_CO_DAU.items()}
 
 
 # ----------------------------------------------------------------------------
@@ -153,6 +160,17 @@ def prepare_ml_data(df):
         if "ty_le_giam_gia" in d.columns:
             tinh = ((d["gia_goc"] - d["gia_ban"]) / d["gia_goc"].replace(0, np.nan) * 100).round()
             d["ty_le_giam_gia"] = d["ty_le_giam_gia"].fillna(tinh)
+    return d
+
+
+def them_cot_co_dau(df):
+    """Thêm các cột CÓ DẤU (bản sao) bên cạnh cột không dấu.
+    Mô hình dùng tên có dấu (Giá bán, Giá gốc...); cột không dấu (nguon, ma_san_pham...) vẫn giữ để làm khóa nối.
+    Gọi hàm này SAU prepare_ml_data (vì prepare_ml_data xử lý các cột không dấu)."""
+    d = df.copy()
+    for k, v in TEN_CO_DAU.items():
+        if k in d.columns:
+            d[v] = d[k]
     return d
 
 
