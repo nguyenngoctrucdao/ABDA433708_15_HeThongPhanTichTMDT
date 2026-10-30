@@ -24,7 +24,7 @@ st.set_page_config(
     page_title="E-Commerce Analytics",
     page_icon=":material/dashboard:",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="expanded",
 )
 
 
@@ -489,7 +489,14 @@ if user:
     ]
 else:
     pages = [st.Page(trang_chu, title="Đăng nhập", icon=":material/lock:", default=True)]
+# Áp dụng giao diện trước khi khởi tạo điều hướng
+if user:
+    st.html(HOME_CSS)
 
+nav = st.navigation(
+    pages,
+    position="sidebar" if user else "hidden"
+)
 nav = st.navigation(pages, position="sidebar" if user else "hidden")
 
 
@@ -498,7 +505,6 @@ nav = st.navigation(pages, position="sidebar" if user else "hidden")
 # =====================================================
 
 if user:
-    st.html(HOME_CSS)
     st.sidebar.markdown("### ◈ E-Commerce Analytics")
     st.sidebar.caption("DATA INTELLIGENCE PLATFORM")
     st.sidebar.divider()
