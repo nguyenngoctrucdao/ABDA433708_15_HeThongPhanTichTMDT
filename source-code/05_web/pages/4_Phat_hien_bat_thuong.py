@@ -77,6 +77,29 @@ div[data-testid="stExpander"] {
     border-radius: 12px;
     border: 1px solid #E2E8F0;
 }
+
+/* Tiêu đề các phần chính: nền xanh nhạt, viền nhấn xanh */
+.anomaly-section-title {
+    background: #E1ECFF;
+    border-left: 5px solid #2563EB;
+    border-radius: 8px;
+    padding: 13px 18px;
+    margin: 24px 0 16px;
+    color: #12376B;
+    font-size: 23px;
+    font-weight: 800;
+    line-height: 1.4;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.07);
+}
+/* Tiêu đề biểu đồ: xanh dương đậm và gạch chân */
+.anomaly-chart-title {
+    color: #1D4ED8;
+    font-size: 19px;
+    font-weight: 750;
+    border-bottom: 2px solid #BFDBFE;
+    padding-bottom: 9px;
+    margin: 12px 0 18px;
+}
 </style>
 """)
 
@@ -131,7 +154,10 @@ st.html("""
 # 4. ĐỌC DỮ LIỆU MONGODB
 # =====================================================
 
-@st.cache_data(ttl=300)
+@st.cache_data(
+    ttl=300,
+    show_spinner="Đang tải..."
+)
 def load_anomalies():
     records = list(
         get_collection("ml_anomalies").find(
@@ -214,7 +240,7 @@ if "anomaly_score" in df.columns:
 # 6. BỘ LỌC
 # =====================================================
 
-st.subheader("Bộ lọc kết quả phân tích")
+st.html('<div class="anomaly-section-title">Bộ lọc kết quả phân tích</div>')
 
 f1, f2, f3 = st.columns(
     [1, 1, 1.4],
@@ -388,7 +414,7 @@ def style_figure(fig, height=400):
 # =====================================================
 
 st.write("")
-st.subheader("Trực quan hóa kết quả phát hiện")
+st.html('<div class="anomaly-section-title">Trực quan hóa kết quả phát hiện</div>')
 
 c1, c2 = st.columns(
     2,
@@ -396,9 +422,7 @@ c1, c2 = st.columns(
 )
 
 with c1:
-    st.markdown(
-        "#### Phân bố trạng thái sản phẩm"
-    )
+    st.html('<div class="anomaly-chart-title">Phân bố trạng thái sản phẩm</div>')
 
     summary = pd.DataFrame({
         "Trạng thái": [
@@ -441,9 +465,7 @@ with c1:
 # =====================================================
 
 with c2:
-    st.markdown(
-        "#### Phân bố điểm bất thường"
-    )
+    st.html('<div class="anomaly-chart-title">Phân bố điểm bất thường</div>')
 
     if "anomaly_score" in filtered.columns:
 
@@ -493,9 +515,7 @@ with c2:
 
 if "nguon" in filtered.columns:
 
-    st.subheader(
-        "Kết quả phát hiện theo nguồn dữ liệu"
-    )
+    st.html('<div class="anomaly-section-title">Kết quả phát hiện theo nguồn dữ liệu</div>')
 
     source_summary = (
         filtered.groupby(
@@ -537,7 +557,7 @@ if "nguon" in filtered.columns:
 # 12. DANH SÁCH SẢN PHẨM CẦN KIỂM TRA
 # =====================================================
 
-st.subheader("Danh sách sản phẩm cần kiểm tra")
+st.html('<div class="anomaly-section-title">Danh sách sản phẩm cần kiểm tra</div>')
 
 outliers = filtered[
     filtered["Bất thường"]
@@ -659,10 +679,3 @@ with st.expander(
     các đặc điểm khác biệt so với phần lớn
     sản phẩm trong tập dữ liệu.
     """)
-
-
-st.info(
-    "Kết quả được đọc từ collection ml_anomalies. "
-    "Trang này chỉ trực quan hóa kết quả đã lưu, "
-    "không huấn luyện lại Isolation Forest."
-)

@@ -10,6 +10,7 @@ Bố cục:
 """
 import base64
 import inspect
+from html import escape
 
 import streamlit as st
 
@@ -24,10 +25,18 @@ st.set_page_config(
     page_title="E-Commerce Analytics",
     page_icon=":material/dashboard:",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded" if current_user() else "collapsed",
 )
-
-
+if not current_user():
+    st.html("""
+    <style>
+    [data-testid="stSidebar"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+    </style>
+    """)
 # =====================================================
 # 2. HÌNH ẢNH (SVG nhúng sẵn, không cần file ngoài)
 # =====================================================
@@ -264,6 +273,11 @@ LOGIN_CSS = (
     .replace("__LOCK_ICON__", svg_uri(LOCK_ICON_SVG))
 )
 
+# Nạp CSS đăng nhập trước khi tạo điều hướng hoặc nội dung trang.
+# Tránh việc CSS giao diện sau đăng nhập còn tồn tại khi Streamlit rerun.
+if not current_user():
+    st.html(LOGIN_CSS)
+
 
 # =====================================================
 # GIAO DIỆN SAU ĐĂNG NHẬP - CHỈ ÁP DỤNG KHI ĐÃ ĐĂNG NHẬP
@@ -371,7 +385,7 @@ def trang_chu():
 
     # ---------- CHƯA ĐĂNG NHẬP ----------
     if not user:
-        st.markdown(LOGIN_CSS, unsafe_allow_html=True)
+        # CSS đăng nhập đã được nạp trước phần điều hướng.
 
         with st.container(key="login_card"):
             left, right = st.columns([1.1, 1], gap="small", vertical_alignment="center")
@@ -429,16 +443,14 @@ def trang_chu():
         return
 
     # ---------- ĐÃ ĐĂNG NHẬP: TRANG CHỦ MỚI ----------
-    st.html(HOME_CSS)
 
     st.html(f"""
     <div class="home-welcome">
       <div class="home-eyebrow">E-COMMERCE ANALYTICS / OVERVIEW</div>
       <div class="home-welcome-title">Tổng quan hệ thống</div>
       <div class="home-welcome-desc">
-        Chào mừng bạn đến với nền tảng phân tích dữ liệu thương mại điện tử.
-        Khám phá dữ liệu sản phẩm Tiki &amp; Hasaki, trực quan hóa kết quả
-        và ứng dụng Machine Learning trên cùng một hệ thống.
+        Chào mừng bạn đến với nền tảng phân tích dữ liệu thương mại điện tử!
+        Khám phá dữ liệu sản phẩm Tiki &amp; Hasaki, trực quan hóa kết quả và ứng dụng Machine Learning trên cùng một hệ thống.
       </div>
       <div class="home-welcome-pill">● Hệ thống sẵn sàng</div>
     </div>
@@ -467,8 +479,22 @@ def trang_chu():
                     <div class="feature-tag">{tag}</div>""")
                     st.page_link(path, label="Mở chức năng", icon=":material/arrow_forward:", use_container_width=True)
 
-    st.html('<div class="home-footnote">E-Commerce Analytics · Tiki &amp; Hasaki · Big Data Project</div>')
+    st.html("""
+    <div class="home-footnote">
+        E-Commerce Analytics · Tiki &amp; Hasaki · Big Data Project
+    </div>
 
+    <div style="
+        text-align: right;
+        font-size: 11px;
+        color: #94a3b8;
+        text-decoration: underline;
+        margin-top: 5px;
+        padding-right: 5px;
+    ">
+        Developer by: Team 15-Big Data
+    </div>
+    """)
 
 # =====================================================
 # 6. ĐIỀU HƯỚNG
@@ -493,11 +519,8 @@ else:
 if user:
     st.html(HOME_CSS)
 
-nav = st.navigation(
-    pages,
-    position="sidebar" if user else "hidden"
-)
-nav = st.navigation(pages, position="sidebar" if user else "hidden")
+# Ẩn menu mặc định để chủ động đặt tài khoản phía trên Trang chủ.
+nav = st.navigation(pages, position="hidden")
 
 
 # =====================================================
@@ -505,15 +528,62 @@ nav = st.navigation(pages, position="sidebar" if user else "hidden")
 # =====================================================
 
 if user:
-    st.sidebar.markdown("### ◈ E-Commerce Analytics")
-    st.sidebar.caption("DATA INTELLIGENCE PLATFORM")
-    st.sidebar.divider()
-    st.sidebar.markdown(f"**{user['name']}**")
-    st.sidebar.caption(f"Vai trò: {user['role']}")
-    st.sidebar.divider()
-    if st.sidebar.button("Đăng xuất", icon=":material/logout:", **stretch(st.button)):
-        logout()
-        st.rerun()
+    # Ưu tiên username; nếu hệ thống chỉ lưu name thì dùng name.
+    username = escape(str(user.get("username") or user.get("name") or "admin"))
+    role_key = str(user.get("role", "")).lower()
+    role_label = "Quản trị viên" if role_key == "admin" else "Người dùng"
+
+    with st.sidebar:
+        st.html("""
+        <style>
+        .sidebar-account {
+            display:flex; align-items:center; gap:12px;
+            padding:14px 12px; margin:10px 0 16px;
+            background:rgba(255,255,255,.075);
+            border:1px solid rgba(191,219,254,.18);
+            border-radius:14px;
+        }
+        .sidebar-avatar {
+            width:46px; height:46px; flex-shrink:0; border-radius:50%;
+            background:linear-gradient(135deg,#2563eb,#38bdf8);
+            display:flex; align-items:center; justify-content:center;
+        }
+        .sidebar-account-name {font-size:16px;font-weight:800;color:#fff;}
+        .sidebar-account-role {font-size:12px;color:#bfdbfe;margin-top:3px;}
+        [data-testid="stSidebar"] [data-testid="stPageLink"] a {
+            border-radius:10px; padding:9px 12px; margin:2px 0;
+        }
+        [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {
+            background:rgba(255,255,255,.12);
+        }
+        </style>
+        """)
+        st.markdown("### ◈ E-Commerce Analytics")
+        st.caption("DATA INTELLIGENCE PLATFORM")
+        st.divider()
+        st.html(f"""
+        <div class="sidebar-account">
+          <div class="sidebar-avatar">
+            <span class="material-symbols-rounded"
+                style="font-size:30px; color:#FFFFFF;">
+                person
+            </span>
+          </div>
+          <div>
+            <div class="sidebar-account-name">{username}</div>
+            <div class="sidebar-account-role">{role_label}</div>
+          </div>
+        </div>
+        """)
+
+        # Menu đặt sau avatar; st.navigation vẫn quản lý định tuyến.
+        for page in pages:
+            st.page_link(page, label=page.title, icon=page.icon, use_container_width=True)
+
+        st.divider()
+        if st.button("Đăng xuất", icon=":material/logout:", **stretch(st.button)):
+            logout()
+            st.rerun()
 
 
 # =====================================================

@@ -38,6 +38,19 @@ h1,h2,h3 {color:#152d55;}
 [data-testid="stMetricValue"] {color:#152d55;}
 [data-testid="stExpander"] {background:#fff;border:1px solid #e2e8f0;border-radius:12px;}
 div[data-baseweb="select"]>div {border-radius:11px;}
+/* Tiêu đề khu vực đồng bộ các trang Machine Learning */
+.section-heading {
+    background: #E1ECFF;
+    border-left: 5px solid #2563EB;
+    border-radius: 9px;
+    padding: 13px 18px;
+    margin: 24px 0 16px;
+    color: #12376B;
+    font-size: 23px;
+    font-weight: 750;
+    line-height: 1.4;
+}
+
 </style>
 <div style="background:linear-gradient(110deg,#152d55,#2457a6);border-radius:18px;padding:30px 36px;margin-bottom:24px;box-shadow:0 10px 25px rgba(21,45,85,.12)">
 <div style="font-size:12px;letter-spacing:1.2px;color:#bfdbfe;font-weight:700">E-COMMERCE ANALYTICS / DATA MANAGEMENT</div>
@@ -46,7 +59,10 @@ div[data-baseweb="select"]>div {border-radius:11px;}
 </div>
 ''')
 
-@st.cache_data(ttl=120)
+@st.cache_data(
+    ttl=60,
+    show_spinner="Đang tải..."
+)
 def load_records():
     return list(get_collection(COLLECTION).find({}, {'_id': 1, **{c: 1 for c in FIELDS}}))
 
@@ -140,7 +156,7 @@ m2.metric('Nguồn dữ liệu', raw_df['Nguồn dữ liệu'].nunique())
 m3.metric('Số danh mục', raw_df['Tên danh mục'].nunique())
 m4.metric('Quyền truy cập', 'Quản trị viên' if IS_ADMIN else 'Chỉ xem')
 
-st.subheader('Tìm kiếm và bộ lọc')
+st.html('<div class="section-heading">Tìm kiếm và bộ lọc</div>')
 f1, f2, f3 = st.columns([2, 1, 1])
 with f1:
     keyword = st.text_input('Tìm kiếm sản phẩm', placeholder='Nhập mã, tên sản phẩm hoặc thương hiệu...')
@@ -182,7 +198,7 @@ if price_max_text.strip():
         st.warning('Giá tối đa phải là số hợp lệ.')
         filtered = filtered.iloc[0:0]
 
-st.subheader('Danh sách sản phẩm')
+st.html('<div class="section-heading">Danh sách sản phẩm</div>')
 st.caption(f'Đang hiển thị {len(filtered):,} / {len(raw_df):,} sản phẩm. Các ô chưa có dữ liệu được giữ trống.')
 view_cols = ['Nguồn dữ liệu', 'Mã sản phẩm', 'Tên sản phẩm', 'Thương hiệu', 'Giá bán', 'Giá gốc', 'Tỷ lệ giảm giá', 'Điểm đánh giá trung bình', 'Số lượt đánh giá', 'Số lượng đã bán', 'Tên danh mục']
 st.dataframe(filtered[view_cols], hide_index=True, use_container_width=True, height=440)
@@ -198,7 +214,7 @@ if not IS_ADMIN:
     st.stop()
 
 st.divider()
-st.subheader('Quản trị dữ liệu (Admin)')
+st.html('<div class="section-heading">Quản trị dữ liệu (Admin)</div>')
 tab_add, tab_edit, tab_delete = st.tabs(['Thêm sản phẩm', 'Chỉnh sửa sản phẩm', 'Xóa sản phẩm'])
 
 with tab_add:
@@ -298,5 +314,3 @@ with tab_delete:
                         st.error('Không tìm thấy sản phẩm cần xóa.')
                 except PyMongoError:
                     st.error('Không thể xóa sản phẩm khỏi MongoDB.')
-
-st.info('Thao tác CRUD chỉ cập nhật products_cleaned. Các collection kết quả ML không tự động được tính lại; cần đồng bộ hoặc chạy lại pipeline ML khi dữ liệu nguồn thay đổi.')

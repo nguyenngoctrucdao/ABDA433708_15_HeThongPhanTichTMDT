@@ -42,6 +42,10 @@ st.html('''
 [data-testid="stAppViewContainer"] {background:#f4f7fc;}
 [data-testid="stMainBlockContainer"] {max-width:1500px;padding-top:2rem;padding-bottom:3rem;}
 h1,h2,h3 {color:#152d55;}
+/* Tiêu đề khu vực và biểu đồ - đồng bộ giao diện ML */
+.report-section-title {background:#E1ECFF;border-left:5px solid #2563EB;border-radius:8px;padding:13px 18px;margin:20px 0 14px;color:#12376B;font-size:21px;font-weight:750;line-height:1.4;}
+.report-chart-title {color:#1D4ED8;font-size:17px;font-weight:750;border-bottom:2px solid #BFDBFE;padding-bottom:9px;margin:16px 0 10px;}
+
 [data-testid="stMetric"] {background:white;border:1px solid #e2e8f0;border-radius:15px;padding:18px;box-shadow:0 5px 18px rgba(21,45,85,.05);}
 [data-testid="stMetricValue"] {color:#152d55;}
 [data-testid="stExpander"] {background:white;border:1px solid #e2e8f0;border-radius:12px;}
@@ -53,6 +57,14 @@ h1,h2,h3 {color:#152d55;}
 </div>
 ''')
 
+
+
+
+def section_title(label):
+    st.html(f'<div class="report-section-title">{label}</div>')
+
+def chart_title(label):
+    st.html(f'<div class="report-chart-title">{label}</div>')
 
 def json_safe(value):
     if isinstance(value, ObjectId):
@@ -68,7 +80,10 @@ def json_safe(value):
     return value
 
 
-@st.cache_data(ttl=120)
+@st.cache_data(
+    ttl=120,
+    show_spinner="Đang tải..."
+)
 def read_collection(name):
     return list(get_collection(name).find({}, {'_id': 0}))
 
@@ -142,7 +157,7 @@ source_col = 'Nguồn dữ liệu'
 category_col = 'Tên danh mục'
 source_options = sorted(products[source_col].dropna().astype(str).unique().tolist()) if source_col in products else []
 
-st.subheader('Phạm vi báo cáo')
+section_title('Phạm vi báo cáo')
 selected_source = st.selectbox('Nguồn dữ liệu', ['Tất cả'] + source_options)
 report_products = products.copy()
 if selected_source != 'Tất cả':
@@ -154,7 +169,7 @@ tab_overview, tab_ml, tab_export, tab_backup = st.tabs([
 ])
 
 with tab_overview:
-    st.subheader('Tổng quan dữ liệu sản phẩm')
+    section_title('Tổng quan dữ liệu sản phẩm')
     total = len(report_products)
     avg_price = report_products['Giá bán'].mean() if 'Giá bán' in report_products else float('nan')
     rated = report_products.copy()
@@ -171,7 +186,7 @@ with tab_overview:
 
     left, right = st.columns(2)
     with left:
-        st.markdown('#### Phân bố theo nguồn')
+        chart_title('Phân bố theo nguồn')
         if source_col in report_products:
             counts = report_products[source_col].fillna('Chưa xác định').value_counts().reset_index()
             counts.columns = ['Nguồn', 'Số sản phẩm']
@@ -180,7 +195,7 @@ with tab_overview:
             fig.update_layout(showlegend=False)
             st.plotly_chart(bar_style(fig), use_container_width=True)
     with right:
-        st.markdown('#### Top 10 danh mục')
+        chart_title('Top 10 danh mục')
         if category_col in report_products:
             counts = report_products[category_col].fillna('Chưa xác định').value_counts().head(10).reset_index()
             counts.columns = ['Danh mục', 'Số sản phẩm']
@@ -189,7 +204,7 @@ with tab_overview:
             fig.update_layout(yaxis={'categoryorder': 'total ascending'})
             st.plotly_chart(bar_style(fig, 410), use_container_width=True)
 
-    st.markdown('#### Bảng thống kê theo nguồn')
+    chart_title('Bảng thống kê theo nguồn')
     if source_col in report_products:
         grouped = report_products.groupby(source_col, dropna=False).agg(
             **{'Số sản phẩm': ('Giá bán', 'size'), 'Giá trung bình': ('Giá bán', 'mean')}
@@ -198,7 +213,7 @@ with tab_overview:
     st.caption('Điểm đánh giá trung bình chỉ tính các sản phẩm có ít nhất một lượt đánh giá.')
 
 with tab_ml:
-    st.subheader('Tổng hợp kết quả Machine Learning')
+    section_title('Tổng hợp kết quả Machine Learning')
     try:
         kmeans = dataframe('ml_kmeans_results')
         profile = dataframe('ml_cluster_profile')
@@ -227,7 +242,7 @@ with tab_ml:
     m2.metric('Random Forest: bản ghi', f'{len(predictions_f):,}')
     m3.metric('Isolation Forest: bản ghi', f'{len(anomalies_f):,}')
 
-    st.markdown('#### K-Means – phân bố cụm')
+    chart_title('K-Means – phân bố cụm')
     if not kmeans_f.empty and 'cluster' in kmeans_f:
         counts = kmeans_f['cluster'].value_counts().reset_index()
         counts.columns = ['Cụm', 'Số sản phẩm']
@@ -242,7 +257,7 @@ with tab_ml:
         with st.expander('Xem hồ sơ đặc điểm các cụm'):
             st.dataframe(profile, hide_index=True, use_container_width=True)
 
-    st.markdown('#### Random Forest – kết quả dự đoán')
+    chart_title('Random Forest – kết quả dự đoán')
     if {'rating_thuc', 'rating_du_doan'}.issubset(predictions_f.columns):
         temp = predictions_f.copy()
         for col in ['rating_thuc', 'rating_du_doan']:
@@ -265,7 +280,7 @@ with tab_ml:
     else:
         st.info('Chưa có kết quả dự đoán hoặc thiếu cột rating_thuc / rating_du_doan.')
 
-    st.markdown('#### Isolation Forest – sản phẩm cần kiểm tra')
+    chart_title('Isolation Forest – sản phẩm cần kiểm tra')
     if not anomalies_f.empty and 'is_anomaly' in anomalies_f:
         flagged = anomalies_f['is_anomaly'].map(anomaly_flag)
         x, y = st.columns(2)
@@ -280,7 +295,7 @@ with tab_ml:
             st.dataframe(model_metrics, hide_index=True, use_container_width=True)
 
 with tab_export:
-    st.subheader('Xuất báo cáo')
+    section_title('Xuất báo cáo')
     st.caption('CSV dùng cho bảng sản phẩm; Excel gồm nhiều sheet về dữ liệu và kết quả ML.')
     st.download_button('Tải dữ liệu sản phẩm (CSV)', data=csv_bytes(report_products),
                        file_name='bao_cao_san_pham.csv', mime='text/csv', use_container_width=True)
@@ -310,7 +325,7 @@ with tab_export:
         st.warning(f'Không thể tạo Excel: {exc}. Kiểm tra openpyxl và dữ liệu MongoDB.')
 
 with tab_backup:
-    st.subheader('Sao lưu dữ liệu JSON')
+    section_title('Sao lưu dữ liệu JSON')
     st.caption('Bản sao lưu chỉ chứa dữ liệu sản phẩm và các kết quả phân tích; không xuất tài khoản hoặc mật khẩu người dùng.')
     backup_names = st.multiselect('Chọn collection cần sao lưu', list(COLLECTIONS),
                                   default=['Sản phẩm'])
@@ -332,7 +347,7 @@ with tab_backup:
             st.error(f'Không thể tạo bản sao lưu: {exc}')
 
     st.divider()
-    st.subheader('Phục hồi dữ liệu sản phẩm')
+    section_title('Phục hồi dữ liệu sản phẩm')
     st.info('Chỉ hỗ trợ phục hồi products_cleaned. Chế độ an toàn: thêm bản ghi chưa tồn tại, không ghi đè hoặc xóa dữ liệu cũ.')
     if not IS_ADMIN:
         st.warning('Chỉ tài khoản Admin được phục hồi dữ liệu.')
@@ -410,4 +425,3 @@ with tab_backup:
                 except (UnicodeError, json.JSONDecodeError, ValueError, TypeError, PyMongoError) as exc:
                     st.error(f'Không thể phục hồi: {exc}')
 
-st.caption('Nguồn dữ liệu: MongoDB | Hệ thống phân tích thương mại điện tử Tiki & Hasaki')

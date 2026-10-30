@@ -17,51 +17,16 @@ st.html("""
 /* Scoped to this page's rendered content; does not modify app.py */
 [data-testid="stMainBlockContainer"] {max-width: 1540px; padding-top: 2.0rem; padding-bottom: 3rem;}
 [data-testid="stAppViewContainer"] {background-color: #f4f7fc;}
-
-/* Khung tiêu đề Dashboard */
-.dash-header {
-    background: linear-gradient(110deg, #152D55, #2457A6);
-    padding: 32px 38px;
-    border-radius: 18px;
-    margin-bottom: 28px;
-    box-shadow: 0 10px 25px rgba(21, 45, 85, 0.12);
-}
-
-.dash-eyebrow {
-    color: #BFDBFE;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    margin-bottom: 12px;
-}
-
-.dash-title {
-    color: #FFFFFF !important;
-    font-size: clamp(26px, 2.5vw, 34px);
-    font-weight: 800;
-    line-height: 1.3;
-    margin: 0 0 12px 0;
-}
-
-.dash-subtitle {
-    color: #DBEAFE;
-    font-size: 15px;
-    line-height: 1.7;
-    margin: 0;
-}
-
-@media (max-width: 768px) {
-    .dash-header {
-        padding: 24px;
-    }
-
-    .dash-title {
-        font-size: 26px;
-    }
-}
-.dash-section {font-size: 1.22rem; font-weight: 760; color: #172F57; margin: 1.4rem 0 .25rem;}
-.dash-caption {color: #71809a; font-size: .83rem; margin: 0 0 .8rem;}
-.dash-filter-title {font-size: 1rem; font-weight: 760; color: #172F57; margin: .35rem 0 .2rem;}
+/* Tiêu đề chính đồng bộ với các trang ML */
+.dash-header {background:linear-gradient(110deg,#152D55,#2457A6);padding:32px 38px;border-radius:18px;margin-bottom:28px;box-shadow:0 10px 25px rgba(21,45,85,.12);}
+.dash-eyebrow {color:#BFDBFE;font-size:13px;font-weight:700;letter-spacing:1.2px;margin-bottom:12px;}
+.dash-title {color:#FFFFFF !important;font-size:clamp(26px,2.5vw,34px);font-weight:800;line-height:1.3;margin:0 0 12px 0;}
+.dash-subtitle {color:#DBEAFE;font-size:15px;line-height:1.7;margin:0;}
+/* Tiêu đề khu vực: nền xanh nhạt + thanh nhấn */
+.dash-section, .dash-filter-title {background:#E1ECFF;border-left:5px solid #2563EB;border-radius:8px;padding:14px 18px;color:#12376B;font-size:22px;font-weight:800;line-height:1.4;margin:22px 0 16px;}
+/* Tiêu đề biểu đồ: xanh dương + đường gạch chân */
+.dash-chart-title {color:#1D4ED8;font-size:17px;font-weight:750;border-bottom:2px solid #BFDBFE;padding:0 0 9px;margin:5px 0 14px;}
+@media(max-width:768px){.dash-header{padding:24px}.dash-title{font-size:26px}.dash-section,.dash-filter-title{font-size:19px}}
 [data-testid="stMetric"] {background: #fff; border: 1px solid #e3eaf5; border-radius: 16px; padding: 18px 20px; box-shadow: 0 5px 18px rgba(22,47,87,.045); min-height: 118px;}
 [data-testid="stMetricLabel"] {color: #66758e; font-weight: 600;}
 [data-testid="stMetricValue"] {color: #172F57; font-weight: 780; font-size: clamp(1.35rem, 2vw, 2rem);}
@@ -73,26 +38,19 @@ st.html("""
 
 st.html("""
 <div class="dash-header">
-    <div class="dash-eyebrow">
-        E-COMMERCE ANALYTICS / DASHBOARD
-    </div>
-
-    <div class="dash-title">
-        Tổng quan dữ liệu thương mại điện tử
-    </div>
-
-    <div class="dash-subtitle">
-        Theo dõi danh mục, giá bán, đánh giá và mức độ
-        tiêu thụ của sản phẩm trên Tiki &amp; Hasaki.
-    </div>
+  <div class="dash-eyebrow">E-COMMERCE ANALYTICS / DASHBOARD</div>
+  <div class="dash-title">Tổng quan dữ liệu thương mại điện tử</div>
+  <div class="dash-subtitle">Theo dõi danh mục, giá bán, đánh giá và mức độ tiêu thụ của sản phẩm trên Tiki &amp; Hasaki.</div>
 </div>
 """)
 
-raw_df = load_products()
+with st.spinner("Đang tải dữ liệu Dashboard..."):
+    raw_df = load_products()
+
 if raw_df.empty:
     st.warning("Chưa có dữ liệu trong products_cleaned.")
     st.stop()
-
+    
 df = raw_df.copy()
 required_cols = ["Nguồn dữ liệu", "Tên danh mục", "Tên sản phẩm", "Giá bán", "Điểm đánh giá trung bình", "Số lượt đánh giá", "Số lượng đã bán"]
 missing = [col for col in required_cols if col not in df.columns]
@@ -172,7 +130,7 @@ def section(title, caption=None):
 section("01  |  Cơ cấu sản phẩm", "Số lượng sản phẩm theo nguồn và theo danh mục trong dữ liệu đã thu thập.")
 left_chart, right_chart = st.columns(2, gap="medium")
 with left_chart:
-    st.markdown("**Phân bố sản phẩm theo nguồn**")
+    st.html('<div class="dash-chart-title">Phân bố sản phẩm theo nguồn</div>')
     source_counts = df["Nguồn dữ liệu"].value_counts().rename_axis("Nguồn").reset_index(name="Số sản phẩm")
     if not source_counts.empty:
         fig = px.bar(source_counts, x="Nguồn", y="Số sản phẩm", text="Số sản phẩm", color="Nguồn", color_discrete_map=PALETTE)
@@ -183,7 +141,7 @@ with left_chart:
         st.info("Không có dữ liệu nguồn để hiển thị.")
 
 with right_chart:
-    st.markdown("**Top 10 danh mục nhiều sản phẩm**")
+    st.html('<div class="dash-chart-title">Top 10 danh mục nhiều sản phẩm</div>')
     top_categories = df["Tên danh mục"].value_counts().head(10).rename_axis("Danh mục").reset_index(name="Số sản phẩm")
     if not top_categories.empty:
         top_categories = top_categories.sort_values("Số sản phẩm")
@@ -197,7 +155,7 @@ with right_chart:
 section("02  |  Giá bán và đánh giá", "Phân bố giá bán và điểm đánh giá của sản phẩm có lượt đánh giá thực tế.")
 price_col, rating_col = st.columns(2, gap="medium")
 with price_col:
-    st.markdown("**Phân bố giá bán theo nguồn**")
+    st.html('<div class="dash-chart-title">Phân bố giá bán theo nguồn</div>')
     price_df = df.dropna(subset=["Giá bán"])
     if not price_df.empty:
         fig = px.box(price_df, x="Nguồn dữ liệu", y="Giá bán", color="Nguồn dữ liệu", points=False, color_discrete_map=PALETTE)
@@ -206,7 +164,7 @@ with price_col:
     else:
         st.info("Không có dữ liệu giá bán hợp lệ.")
 with rating_col:
-    st.markdown("**Phân bố điểm đánh giá**")
+    st.html('<div class="dash-chart-title">Phân bố điểm đánh giá</div>')
     rating_df = df[(df["Số lượt đánh giá"] > 0) & df["Điểm đánh giá trung bình"].notna()]
     if not rating_df.empty:
         fig = px.histogram(rating_df, x="Điểm đánh giá trung bình", nbins=20, color="Nguồn dữ liệu", barmode="group", color_discrete_map=PALETTE)

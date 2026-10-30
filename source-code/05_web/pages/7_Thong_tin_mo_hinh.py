@@ -121,6 +121,28 @@ div[data-testid="stMetricValue"] {
     .ml-model-version { margin-left: 68px; }
 }
 
+
+/* Tiêu đề khu vực lớn: đồng bộ các trang phân tích */
+.ml-section-title {
+    background: #E1ECFF;
+    border-left: 5px solid #2563EB;
+    border-radius: 8px;
+    padding: 15px 19px;
+    margin: 22px 0 17px;
+    color: #12376B;
+    font-size: 23px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+.ml-detail-title {
+    color: #1D4ED8;
+    font-size: 19px;
+    font-weight: 750;
+    padding-bottom: 9px;
+    margin: 16px 0;
+    border-bottom: 2px solid #BFDBFE;
+}
+
 /* Mục mở rộng */
 div[data-testid="stExpander"] {
     background: white;
@@ -129,6 +151,15 @@ div[data-testid="stExpander"] {
 }
 </style>
 """)
+
+
+
+def section_title(label):
+    st.html(f'<div class="ml-section-title">{escape(label)}</div>')
+
+
+def detail_title(label):
+    st.html(f'<div class="ml-detail-title">{escape(label)}</div>')
 
 
 # =====================================================
@@ -570,7 +601,7 @@ st.write("")
 # 9. THÔNG TIN TỪNG MÔ HÌNH
 # =====================================================
 
-st.subheader("Kết quả đánh giá từng mô hình")
+section_title("Kết quả đánh giá từng mô hình")
 
 # Sắp xếp theo thứ tự mong muốn
 model_order = {
@@ -618,7 +649,7 @@ for row in records:
 
         render_model_heading(model_info, version)
 
-        st.markdown("#### Các chỉ số đánh giá")
+        detail_title("Các chỉ số đánh giá")
 
         show_metrics(metrics)
 
@@ -643,7 +674,7 @@ for row in records:
 # 10. GIẢI THÍCH CÁC CHỈ SỐ
 # =====================================================
 
-st.subheader("Giải thích thuật ngữ đánh giá")
+section_title("Giải thích thuật ngữ đánh giá")
 
 st.caption(
     "Các chỉ số dưới đây giúp diễn giải kết quả "
@@ -666,14 +697,3 @@ for key, info in METRIC_INFO.items():
             info["meaning"]
         )
 
-
-# =====================================================
-# 11. GHI CHÚ
-# =====================================================
-
-st.info(
-    "Các chỉ số được đọc trực tiếp từ collection "
-    "ml_model_metrics trong MongoDB. "
-    "Trang này chỉ hiển thị và giải thích kết quả, "
-    "không huấn luyện lại mô hình."
-)

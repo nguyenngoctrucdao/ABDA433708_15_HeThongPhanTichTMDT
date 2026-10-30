@@ -78,6 +78,28 @@ div[data-testid="stExpander"] {
     border-radius: 12px;
     border: 1px solid #E2E8F0;
 }
+
+/* Tiêu đề các khu vực phân tích */
+.pred-section-title {
+    color: #12376B;
+    background: linear-gradient(90deg, #DFEBFF 0%, #F1F6FF 100%);
+    border-left: 5px solid #2563EB;
+    border-radius: 8px;
+    padding: 13px 18px;
+    margin: 24px 0 16px;
+    font-size: 23px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+/* Tiêu đề phía trên từng biểu đồ */
+.pred-chart-title {
+    color: #1D4ED8;
+    font-size: 19px;
+    font-weight: 750;
+    padding: 6px 0 10px;
+    margin: 5px 0 14px;
+    border-bottom: 2px solid #BFDBFE;
+}
 </style>
 """)
 
@@ -131,7 +153,10 @@ st.html("""
 # 4. ĐỌC DỮ LIỆU MONGODB
 # =====================================================
 
-@st.cache_data(ttl=300)
+@st.cache_data(
+    ttl=300,
+    show_spinner="Đang tải..."
+)
 def load_predictions():
     records = list(
         get_collection("ml_rating_predictions").find(
@@ -225,7 +250,7 @@ valid["Đánh giá sai số"] = pd.cut(
 # 6. BỘ LỌC
 # =====================================================
 
-st.subheader("Bộ lọc kết quả dự đoán")
+st.html('<div class="pred-section-title">Bộ lọc kết quả dự đoán</div>')
 
 filter1, filter2 = st.columns(2)
 
@@ -411,7 +436,7 @@ def style_figure(fig, height=410):
 # =====================================================
 
 st.write("")
-st.subheader("Phân tích kết quả dự đoán")
+st.html('<div class="pred-section-title">Phân tích kết quả dự đoán</div>')
 
 chart1, chart2 = st.columns(
     2,
@@ -420,9 +445,7 @@ chart1, chart2 = st.columns(
 
 with chart1:
 
-    st.markdown(
-        "#### Điểm thực tế và điểm dự đoán"
-    )
+    st.html('<div class="pred-chart-title">Điểm thực tế và điểm dự đoán</div>')
 
     hover_cols = [
         col
@@ -491,9 +514,7 @@ with chart1:
 
 with chart2:
 
-    st.markdown(
-        "#### Phân bố sai số dự đoán"
-    )
+    st.html('<div class="pred-chart-title">Phân bố sai số dự đoán</div>')
 
     fig_hist = px.histogram(
         filtered,
@@ -524,7 +545,7 @@ with chart2:
 # 12. SO SÁNH ĐIỂM TRUNG BÌNH
 # =====================================================
 
-st.subheader("So sánh điểm đánh giá trung bình")
+st.html('<div class="pred-section-title">So sánh điểm đánh giá trung bình</div>')
 
 avg_compare = pd.DataFrame({
     "Loại điểm": [
@@ -574,7 +595,7 @@ st.plotly_chart(
 # 13. BẢNG KẾT QUẢ DỰ ĐOÁN
 # =====================================================
 
-st.subheader("Bảng kết quả dự đoán")
+st.html('<div class="pred-section-title">Bảng kết quả dự đoán</div>')
 
 st.caption(
     f"Đang hiển thị {len(filtered):,} bản ghi."
@@ -673,11 +694,3 @@ with st.expander(
     Điểm dữ liệu càng gần đường này thì
     dự đoán càng gần giá trị thực tế.
     """)
-
-
-st.info(
-    "Dữ liệu được đọc trực tiếp từ collection "
-    "ml_rating_predictions. Trang này chỉ "
-    "trực quan hóa kết quả đã lưu, "
-    "không huấn luyện lại mô hình."
-)

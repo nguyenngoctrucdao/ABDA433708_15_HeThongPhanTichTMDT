@@ -27,7 +27,7 @@ def get_collection(name):
     return get_database()[name]
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60, show_spinner=False)
 def load_products():
     collection = get_collection("products_cleaned")
     records = list(collection.find({}, {"_id": 0}))

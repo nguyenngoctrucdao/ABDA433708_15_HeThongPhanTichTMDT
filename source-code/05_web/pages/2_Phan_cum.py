@@ -59,6 +59,30 @@ h1, h2, h3 {
     color: #152D55;
 }
 
+/* Tiêu đề các khu vực phân tích */
+.kmeans-section-title {
+    color: #12376B;
+    font-size: 23px;
+    font-weight: 800;
+    line-height: 1.4;
+    background: linear-gradient(90deg, #E1ECFF 0%, #F4F7FC 100%);
+    border-left: 6px solid #2563EB;
+    border-radius: 0 12px 12px 0;
+    padding: 13px 18px;
+    margin: 26px 0 16px;
+}
+
+/* Tiêu đề nằm trên mỗi biểu đồ */
+.kmeans-chart-title {
+    color: #1D4ED8;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.4;
+    padding: 0 0 10px;
+    margin: 12px 0 16px;
+    border-bottom: 2px solid #BFDBFE;
+}
+
 /* KPI */
 div[data-testid="stMetric"] {
     background: #FFFFFF;
@@ -159,7 +183,10 @@ st.html("""
 # 5. ĐỌC DỮ LIỆU MONGODB
 # =====================================================
 
-@st.cache_data(ttl=300)
+@st.cache_data(
+    ttl=300,
+    show_spinner="Đang tải..."
+)
 def load_kmeans_results():
     records = list(
         get_collection("ml_kmeans_results").find(
@@ -250,7 +277,26 @@ for col in ["pc1", "pc2"]:
 # 7. BỘ LỌC
 # =====================================================
 
-st.subheader("Bộ lọc phân tích")
+
+st.html("""
+<div style="
+    background: #E1ECFF;
+    border-left: 5px solid #2563EB;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: 16px;
+    margin-bottom: 20px;
+">
+    <div style="
+        color: #12376B;
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.4;
+    ">
+        Bộ lọc phân tích
+    </div>
+</div>
+""")
 
 all_clusters = sorted(
     df["cluster"].unique().tolist()
@@ -409,7 +455,7 @@ color_map = {
 # =====================================================
 
 st.write("")
-st.subheader("Trực quan hóa kết quả phân cụm")
+st.html('<div class="kmeans-section-title">Trực quan hóa kết quả phân cụm</div>')
 
 chart_col1, chart_col2 = st.columns(
     2,
@@ -418,7 +464,7 @@ chart_col1, chart_col2 = st.columns(
 
 with chart_col1:
 
-    st.markdown("#### Phân bố sản phẩm theo cụm")
+    st.html('<div class="kmeans-chart-title">Phân bố sản phẩm theo cụm</div>')
 
     cluster_counts = (
         filtered_df["Tên cụm"]
@@ -473,7 +519,7 @@ with chart_col1:
 
 with chart_col2:
 
-    st.markdown("#### Trực quan hóa phân cụm PCA")
+    st.html('<div class="kmeans-chart-title">Trực quan hóa phân cụm PCA</div>')
 
     if {"pc1", "pc2"}.issubset(
         filtered_df.columns
@@ -536,7 +582,7 @@ with chart_col2:
 # 12. TỶ TRỌNG CÁC CỤM
 # =====================================================
 
-st.subheader("Tỷ trọng sản phẩm theo cụm")
+st.html('<div class="kmeans-section-title">Tỷ trọng sản phẩm theo cụm</div>')
 
 share_df = (
     filtered_df["Tên cụm"]
@@ -575,7 +621,7 @@ st.plotly_chart(
 # 13. ĐẶC ĐIỂM CÁC CỤM
 # =====================================================
 
-st.subheader("Đặc điểm các cụm sản phẩm")
+st.html('<div class="kmeans-section-title">Đặc điểm các cụm sản phẩm</div>')
 
 st.caption(
     "Bảng mô tả đặc điểm các cụm được đọc từ "
@@ -637,7 +683,7 @@ else:
 # 14. KẾT QUẢ CHI TIẾT
 # =====================================================
 
-st.subheader("Danh sách sản phẩm đã phân cụm")
+st.html('<div class="kmeans-section-title">Danh sách sản phẩm đã phân cụm</div>')
 
 st.caption(
     f"Đang hiển thị {len(filtered_df):,} sản phẩm "
@@ -741,8 +787,3 @@ with st.expander(
     giá bán hoặc số lượng bán.
     """)
 
-
-st.info(
-    "Kết quả được đọc từ MongoDB và chỉ dùng "
-    "để trực quan hóa, không huấn luyện lại mô hình."
-)
