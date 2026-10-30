@@ -17,9 +17,48 @@ st.html("""
 /* Scoped to this page's rendered content; does not modify app.py */
 [data-testid="stMainBlockContainer"] {max-width: 1540px; padding-top: 2.0rem; padding-bottom: 3rem;}
 [data-testid="stAppViewContainer"] {background-color: #f4f7fc;}
-.dash-eyebrow {font-size: .77rem; font-weight: 750; letter-spacing: .12em; color: #6a82a5; margin-bottom: .35rem;}
-.dash-title {font-size: clamp(1.7rem, 2.5vw, 2.5rem); font-weight: 800; color: #172F57; line-height: 1.22; margin: 0;}
-.dash-subtitle {color: #65748b; font-size: .95rem; margin-top: .6rem; margin-bottom: 1.2rem;}
+
+/* Khung tiêu đề Dashboard */
+.dash-header {
+    background: linear-gradient(110deg, #152D55, #2457A6);
+    padding: 32px 38px;
+    border-radius: 18px;
+    margin-bottom: 28px;
+    box-shadow: 0 10px 25px rgba(21, 45, 85, 0.12);
+}
+
+.dash-eyebrow {
+    color: #BFDBFE;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    margin-bottom: 12px;
+}
+
+.dash-title {
+    color: #FFFFFF !important;
+    font-size: clamp(26px, 2.5vw, 34px);
+    font-weight: 800;
+    line-height: 1.3;
+    margin: 0 0 12px 0;
+}
+
+.dash-subtitle {
+    color: #DBEAFE;
+    font-size: 15px;
+    line-height: 1.7;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .dash-header {
+        padding: 24px;
+    }
+
+    .dash-title {
+        font-size: 26px;
+    }
+}
 .dash-section {font-size: 1.22rem; font-weight: 760; color: #172F57; margin: 1.4rem 0 .25rem;}
 .dash-caption {color: #71809a; font-size: .83rem; margin: 0 0 .8rem;}
 .dash-filter-title {font-size: 1rem; font-weight: 760; color: #172F57; margin: .35rem 0 .2rem;}
@@ -33,9 +72,20 @@ st.html("""
 """)
 
 st.html("""
-<div class="dash-eyebrow">E-COMMERCE ANALYTICS / DASHBOARD</div>
-<div class="dash-title">Tổng quan dữ liệu thương mại điện tử</div>
-<div class="dash-subtitle">Theo dõi danh mục, giá bán, đánh giá và mức độ tiêu thụ của sản phẩm trên Tiki &amp; Hasaki.</div>
+<div class="dash-header">
+    <div class="dash-eyebrow">
+        E-COMMERCE ANALYTICS / DASHBOARD
+    </div>
+
+    <div class="dash-title">
+        Tổng quan dữ liệu thương mại điện tử
+    </div>
+
+    <div class="dash-subtitle">
+        Theo dõi danh mục, giá bán, đánh giá và mức độ
+        tiêu thụ của sản phẩm trên Tiki &amp; Hasaki.
+    </div>
+</div>
 """)
 
 raw_df = load_products()

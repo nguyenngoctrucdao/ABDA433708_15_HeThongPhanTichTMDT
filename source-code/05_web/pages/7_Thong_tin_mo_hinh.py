@@ -1,5 +1,8 @@
 
 import json
+from html import escape
+import re
+import unicodedata
 import streamlit as st
 import pandas as pd
 
@@ -60,6 +63,64 @@ div[data-testid="stMetricValue"] {
     color: #1d4ed8;
 }
 
+/* Tiêu đề từng mô hình: biểu tượng vector và bố cục đồng nhất */
+.ml-model-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 17px;
+    padding: 21px 22px;
+    margin-bottom: 24px;
+    border: 1px solid #dbe6f5;
+    border-radius: 15px;
+    background: linear-gradient(110deg, #f8fbff, #eef4fc);
+}
+.ml-model-icon {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    background: linear-gradient(135deg, #173b70, #2563b9);
+}
+.ml-model-heading-content { flex: 1; min-width: 0; }
+.ml-model-eyebrow {
+    color: #3971af;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+.ml-model-title {
+    color: #173257;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.3;
+}
+.ml-model-description {
+    color: #536780;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-top: 7px;
+}
+.ml-model-version {
+    border: 1px solid #cbdcf2;
+    border-radius: 999px;
+    padding: 6px 11px;
+    color: #24568e;
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 650;
+    white-space: nowrap;
+}
+@media (max-width: 700px) {
+    .ml-model-heading { flex-wrap: wrap; padding: 16px; gap: 12px; }
+    .ml-model-title { font-size: 20px; }
+    .ml-model-version { margin-left: 68px; }
+}
+
 /* Mục mở rộng */
 div[data-testid="stExpander"] {
     background: white;
@@ -77,7 +138,8 @@ div[data-testid="stExpander"] {
 MODEL_INFO = {
     "kmeans": {
         "title": "K-Means Clustering",
-        "icon": "🔷",
+        "type": "HỌC KHÔNG GIÁM SÁT",
+        "symbol": "clusters",
         "description": (
             "Mô hình học không giám sát dùng để phân nhóm "
             "các sản phẩm có đặc điểm tương đồng."
@@ -85,7 +147,8 @@ MODEL_INFO = {
     },
     "random_forest_rating": {
         "title": "Random Forest Regressor",
-        "icon": "🌳",
+        "type": "HỌC CÓ GIÁM SÁT",
+        "symbol": "forest",
         "description": (
             "Mô hình học có giám sát dùng để dự đoán "
             "điểm đánh giá trung bình của sản phẩm."
@@ -93,13 +156,44 @@ MODEL_INFO = {
     },
     "isolation_forest": {
         "title": "Isolation Forest",
-        "icon": "🔍",
+        "type": "PHÁT HIỆN BẤT THƯỜNG",
+        "symbol": "anomaly",
         "description": (
             "Mô hình phát hiện bất thường, hỗ trợ nhận diện "
             "những sản phẩm có đặc điểm khác biệt."
         ),
     },
 }
+
+MODEL_ICONS = {
+    "clusters": '<circle cx="7" cy="7" r="3"/><circle cx="18" cy="7" r="3"/><circle cx="12" cy="18" r="3"/><path d="M9.5 9.5l1.5 5M15.5 9.5l-2 5"/>',
+    "forest": '<path d="M4 20h16M7 17V9M12 17V5M17 17V11"/><path d="M4 12l3-3 3 3M9 8l3-3 3 3M14 14l3-3 3 3"/>',
+    "anomaly": '<circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4M11 7v5M11 15h.01"/>',
+}
+
+
+def render_model_heading(model_info, version):
+    """Chỉ tạo tiêu đề giao diện; không thay đổi kết quả mô hình."""
+    title = escape(str(model_info.get("title", "Mô hình")))
+    model_type = escape(str(model_info.get("type", "MACHINE LEARNING")))
+    description = escape(str(model_info.get("description", "")))
+    version_text = escape(str(version))
+    svg_paths = MODEL_ICONS.get(model_info.get("symbol"), MODEL_ICONS["clusters"])
+    st.html(f"""
+    <div class="ml-model-heading">
+      <div class="ml-model-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+             width="28" height="28" aria-hidden="true">{svg_paths}</svg>
+      </div>
+      <div class="ml-model-heading-content">
+        <div class="ml-model-eyebrow">{model_type}</div>
+        <div class="ml-model-title">{title}</div>
+        <div class="ml-model-description">{description}</div>
+      </div>
+      <div class="ml-model-version">Phiên bản {version_text}</div>
+    </div>
+    """)
 
 
 # =====================================================
@@ -229,6 +323,78 @@ def format_number(value):
     return f"{float(value):,.4f}"
 
 
+METRIC_DISPLAY_NAMES = {
+    "mae_cai_thien_so_voi_co_so_pct": "Mức cải thiện MAE so với mô hình cơ sở (%)",
+    "cv5_mae_rf": "MAE trung bình qua 5 lần kiểm định chéo",
+    "cv5_mae_baseline": "MAE mô hình cơ sở qua 5 lần kiểm định chéo",
+    "n_test": "Số sản phẩm trong tập kiểm tra",
+    "num__Số lượng đã bán": "Mức độ quan trọng – Số lượng đã bán",
+    "num__Giá bán": "Mức độ quan trọng – Giá bán",
+    "num__Giá gốc": "Mức độ quan trọng – Giá gốc",
+    "num__Số lượt đánh giá": "Mức độ quan trọng – Số lượt đánh giá",
+    "num__Tỷ lệ giảm giá": "Mức độ quan trọng – Tỷ lệ giảm giá",
+    
+    "gia_ban_le_0": "Số sản phẩm có giá bán ≤ 0",
+    "gia_ban_gt_gia_goc": "Số sản phẩm có giá bán lớn hơn giá gốc",
+    "ty_le_giam_gia_ngoai_0_100": "Số sản phẩm có tỷ lệ giảm giá ngoài 0–100%",
+    "gia_goc_thieu": "Số sản phẩm thiếu giá gốc",
+    "so_tien_giam_gia_thieu": "Số sản phẩm thiếu số tiền giảm giá",
+    "so_dong_thieu_gia_goc_khong_xet": "Số dòng thiếu giá gốc không được xét",
+    "hasaki": "Số sản phẩm Hasaki",
+    "tiki": "Số sản phẩm Tiki",
+    "jaccard_khi_them_so_luong_da_ban": "Độ tương đồng Jaccard khi bổ sung số lượng đã bán",
+    "ty_le_trung_voi_iqr": "Tỷ lệ trùng kết quả với phương pháp IQR",
+}
+
+def get_metric_display_name(key):
+    """Chỉ đổi nhãn hiển thị; không sửa tên trường MongoDB."""
+    raw_key = str(key).strip()
+    normalized = normalize_metric_key(raw_key)
+
+    # Giữ nguyên các ánh xạ đã có trong phiên bản gốc.
+    if raw_key in METRIC_DISPLAY_NAMES:
+        return METRIC_DISPLAY_NAMES[raw_key]
+
+    if normalized in METRIC_INFO:
+        return METRIC_INFO[normalized]["vi"]
+
+    # Chuẩn hóa để nhận diện cả dấu tiếng Việt, khoảng trắng, dấu _ và ký hiệu.
+    def clean_name(value):
+        value = str(value).lower().strip()
+        value = unicodedata.normalize("NFD", value)
+        value = "".join(c for c in value if unicodedata.category(c) != "Mn")
+        value = value.replace("đ", "d")
+        value = value.replace("≤", " le ").replace("<=", " le ")
+        value = value.replace(">=", " ge ").replace(">", " gt ")
+        value = re.sub(r"[^a-z0-9]+", "_", value)
+        return value.strip("_")
+
+    key_clean = clean_name(raw_key)
+
+    # So khớp các tên đã định nghĩa, dù tên gốc khác dấu hoặc dấu cách.
+    for original, display in METRIC_DISPLAY_NAMES.items():
+        if clean_name(original) == key_clean:
+            return display
+
+    # Một số tên MongoDB dùng ký hiệu hoặc cách viết khác.
+    extra_names = {
+        "gia_ban_le_0": "Số sản phẩm có giá bán ≤ 0",
+        "gia_ban_gt_gia_goc": "Số sản phẩm có giá bán lớn hơn giá gốc",
+        "ty_le_giam_gia_ngoai_0_100": "Số sản phẩm có tỷ lệ giảm giá ngoài 0–100%",
+        "gia_goc_thieu": "Số sản phẩm thiếu giá gốc",
+        "so_tien_giam_gia_thieu": "Số sản phẩm thiếu số tiền giảm giá",
+        "so_dong_thieu_gia_goc_khong_xet": "Số dòng thiếu giá gốc không được xét",
+        "jaccard_khi_them_so_luong_da_ban": "Độ tương đồng Jaccard khi bổ sung số lượng đã bán",
+        "ty_le_trung_voi_iqr": "Tỷ lệ trùng kết quả với phương pháp IQR",
+    }
+    if key_clean in extra_names:
+        return extra_names[key_clean]
+
+    if raw_key.startswith("num__"):
+        return "Mức độ quan trọng – " + raw_key.removeprefix("num__")
+
+    return raw_key.replace("_", " ")
+
 def show_metrics(metrics):
     """Hiển thị chỉ số dưới dạng các KPI."""
     metric_list = flatten_metrics(metrics)
@@ -252,10 +418,7 @@ def show_metrics(metrics):
 
             with col:
                 st.metric(
-                    label=(
-                        "R²" if normalized == "R2"
-                        else normalized
-                    ),
+                    label=get_metric_display_name(key),
                     value=format_number(value),
                     help=(
                         f"{info.get('name', key)} — "
@@ -263,10 +426,6 @@ def show_metrics(metrics):
                         f"{info.get('meaning', '')}"
                     ) if info else None
                 )
-
-                if info:
-                    st.caption(info["vi"])
-
 
 def show_json_data(title, value):
     """Hiển thị JSON có định dạng dễ đọc."""
@@ -441,7 +600,8 @@ for row in records:
         model_name,
         {
             "title": model_name,
-            "icon": "📈",
+            "symbol": "clusters",
+            "type": "MACHINE LEARNING",
             "description": "Thông tin đánh giá mô hình.",
         }
     )
@@ -456,18 +616,7 @@ for row in records:
 
     with st.container(border=True):
 
-        st.markdown(
-            f"### {model_info['icon']} "
-            f"{model_info['title']}"
-        )
-
-        st.caption(
-            f"Phiên bản: {version}"
-        )
-
-        st.write(
-            model_info["description"]
-        )
+        render_model_heading(model_info, version)
 
         st.markdown("#### Các chỉ số đánh giá")
 

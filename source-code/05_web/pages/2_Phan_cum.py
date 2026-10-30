@@ -599,6 +599,28 @@ if not profiles_df.empty:
             )
         ]
 
+    
+    # Đổi tên cột để hiển thị trên website
+    profile_view = profile_view.rename(
+        columns={
+            "cluster": "Mã cụm",
+            "cluster_label": "Đặc điểm nổi bật của cụm"
+        }
+    )
+    
+    profile_view = profile_view.rename(
+        columns={
+            "cluster": "Mã cụm",
+            "cluster_label": "Đặc điểm nổi bật của cụm",
+            "so_san_pham": "Số lượng sản phẩm",
+            "ty_le_chua_co_danh_gia_pct": "Tỷ lệ sản phẩm chưa có đánh giá (%)",
+            "so_hasaki": "Số sản phẩm Hasaki",
+            "so_tiki": "Số sản phẩm Tiki",
+            "model_version": "Phiên bản mô hình",
+            "created_at": "Thời gian tạo"
+        }
+    )
+
     st.dataframe(
         profile_view,
         hide_index=True,
@@ -651,7 +673,7 @@ rename_map = {
     "nguon": "Nguồn dữ liệu",
     "ma_san_pham": "Mã sản phẩm",
     "cluster": "Mã cụm",
-    "cluster_label": "Tên cụm",
+    "cluster_label": "Đặc điểm nổi bật của cụm",
     "pc1": "PCA 1",
     "pc2": "PCA 2"
 }
