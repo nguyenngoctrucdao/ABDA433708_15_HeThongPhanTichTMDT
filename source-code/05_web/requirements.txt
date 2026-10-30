@@ -1,0 +1,10 @@
+streamlit
+pandas
+numpy
+plotly
+pymongo
+python-dotenv
+scikit-learn
+joblib
+bcrypt
+streamlit-authenticator
