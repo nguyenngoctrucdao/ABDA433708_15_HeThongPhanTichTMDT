@@ -21,11 +21,12 @@ from auth import login, logout, current_user
 # 1. CẤU HÌNH TRANG
 # =====================================================
 
+import streamlit as st
 st.set_page_config(
-    page_title="E-Commerce Analytics",
-    page_icon=":material/dashboard:",
+    page_title="E-Commerce Analytics | Login",
+    page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded" if current_user() else "collapsed",
+    initial_sidebar_state="collapsed"
 )
 if not current_user():
     st.html("""
