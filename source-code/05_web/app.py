@@ -23,7 +23,7 @@ from auth import login, logout, current_user
 
 import streamlit as st
 st.set_page_config(
-    page_title="E-Commerce Analytics | Login",
+    page_title="E-Commerce Analytics",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
