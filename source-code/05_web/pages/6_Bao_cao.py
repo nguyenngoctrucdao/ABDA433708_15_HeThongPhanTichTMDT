@@ -224,7 +224,6 @@ with tab_ml:
         st.error(f'Không đọc được collection ML: {exc}')
         st.stop()
 
-    st.caption('Các kết quả ML là kết quả đã lưu trong MongoDB. Bộ lọc nguồn chỉ áp dụng khi bản ghi ML có trường nguồn tương ứng.')
 
     def filter_ml(frame):
         if selected_source == 'Tất cả' or frame.empty:
