@@ -347,7 +347,6 @@ with tab_backup:
 
     st.divider()
     section_title('Phục hồi dữ liệu sản phẩm')
-    st.info('Chỉ hỗ trợ phục hồi products_cleaned. Chế độ an toàn: thêm bản ghi chưa tồn tại, không ghi đè hoặc xóa dữ liệu cũ.')
     if not IS_ADMIN:
         st.warning('Chỉ tài khoản Admin được phục hồi dữ liệu.')
     else:
